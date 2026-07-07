@@ -1,3 +1,4 @@
+-- Batting strike rate by phase (powerplay/middle/death): overall baseline across all seasons.
 WITH parsed_data AS (
     SELECT
         SPLIT_PART(ball, '.', 1) :: SMALLINT AS over_num,
@@ -43,9 +44,7 @@ ORDER BY
         WHEN 'Death' THEN 3
     END;
 
-
-----------------------------    
-
+-- Batting strike rate by phase, broken down per season to show scoring trends over time.
 WITH parsed_data AS (
     SELECT
         SPLIT_PART(ball, '.', 1) :: SMALLINT AS over_num,

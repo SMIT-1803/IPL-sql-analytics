@@ -1,3 +1,4 @@
+-- Orange Cap: highest run-scorer per IPL season (window RANK over a grouped aggregate).
 WITH season_runs AS (
     SELECT
         player_name,
