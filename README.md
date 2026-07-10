@@ -1,11 +1,11 @@
-# IPL Ball-by-Ball Analytics (PostgreSQL)
+# IPL Ball-by-Ball Analytics (PostgreSQL + Tableau)
 
 A PostgreSQL analytics project built on **IPL ball-by-ball data** — roughly
 **295,732 deliveries across 1,243 matches (2008–2026 seasons)**. Raw Cricsheet
 CSV data is modelled into a star schema, loaded through a staging-and-transform
-pipeline, and analysed with SQL: window functions, gaps-and-islands,
-conditional aggregation, and a measured indexing pass. A small Python CLI sits
-on top as an interactive player-lookup tool.
+pipeline, analysed with SQL (window functions, gaps-and-islands, conditional
+aggregation, and a measured indexing pass), and surfaced in an interactive
+**Tableau dashboard**. A small Python CLI sits on top as a player-lookup tool.
 
 The analytical logic lives in **SQL**, not in application code. Python appears
 only where it's the right tool: a bulk loader, and the parameterised lookup tool.
@@ -13,13 +13,29 @@ only where it's the right tool: a bulk loader, and the parameterised lookup tool
 ---
 
 ## Table of contents
+- [Interactive dashboard](#interactive-dashboard)
 - [Data source](#data-source)
 - [Architecture](#architecture)
 - [How to run](#how-to-run)
 - [Queries](#queries)
 - [Optimization](#optimization)
-- [Limitations & assumptions](#limitations--assumptions)
 - [Repository layout](#repository-layout)
+
+---
+
+## Interactive dashboard
+
+A four-panel Tableau dashboard visualising the analytics interactively — a
+batting leaderboard (filterable by season), phase-wise strike rates, the
+death-over bowling economy leaderboard, and rolling batting form for any player:
+
+**[▶ View the live dashboard on Tableau Public](https://public.tableau.com/app/profile/smit.sanghvi/viz/IPLBall-by-BallAnalytics/IPLAnalytics20082026)**
+
+![Dashboard preview](docs/dashboard.png)
+
+The dashboard is fed by aggregated CSV exports of the SQL queries (Tableau
+Public can't connect to a local database), so the additive components are
+computed in SQL and the ratios, rankings, and filters are computed in Tableau.
 
 ---
 
@@ -156,41 +172,13 @@ death-over query aggregates across all bowlers rather than filtering to one).
 
 ---
 
-## Limitations & assumptions
-
-Deliberate scope decisions and known data-quality caveats:
-
-- **Season is derived from the match date** (calendar year of the first ball),
-  not the source `season` label — the raw label had formatting inconsistencies
-  (e.g. `2007/08`, and a spreadsheet-corrupted `07-Aug`). This relabels the
-  2007/08 season as 2008.
-- **Venue names have inconsistencies** across seasons (same ground under
-  slightly different spellings), so the ~60 distinct venue strings represent
-  fewer physical grounds. Not normalised.
-- **Player names are searched by surname**, because Cricsheet stores names as
-  `initial surname` (e.g. `V Kohli`), which doesn't match how users type them.
-  A production version would use a name-alias/normalisation layer.
-- **Super overs excluded** (`innings IN (1, 2)`) from phase, economy, and streak
-  analysis, for simplicity.
-- **Dot-ball streaks are scoped per innings** and count a "dot" as a faced ball
-  with no run off the bat.
-- **Dismissals count the striker only** — a run-out at the non-striker's end is
-  not attributed, slightly undercounting some players' dismissals.
-- **Rolling form is a simple average of runs per innings** — it does not account
-  for not-outs or balls faced.
-- **Fielding detail dropped** — `fielder_1/2/3`, `other_wicket_type`, and a few
-  rare columns from the source are not modelled.
-
-Listing these is deliberate: they document where the data's edges are and which
-simplifications were chosen consciously.
-
----
-
 ## Repository layout
 
 ```
 .
-├── data/                        # all_matches.csv
+├── data/
+│   ├── all_matches.csv          # gitignored — download from Cricsheet
+│   └── exports/                 # gitignored — aggregated CSVs feeding Tableau
 ├── sql/
 │   ├── 01_schema.sql            # staging + star-schema DDL
 │   ├── 02_load.sql              # \copy raw CSV into staging
@@ -200,9 +188,10 @@ simplifications were chosen consciously.
 ├── scripts/
 │   └── player_profile.py        # parameterised player-lookup CLI
 ├── docs/
-│   └── schema_diagram.png       # ER diagram
+│   ├── schema_diagram.png       # ER diagram
+│   └── dashboard.png            # Tableau dashboard preview
+├── requirements.txt
 └── README.md
-└── requirements.txt
 ```
 
 ---
